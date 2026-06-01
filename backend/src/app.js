@@ -5,12 +5,13 @@ import helmet from "helmet";
 import morgan from "morgan";
 import compression from "compression";
 import rateLimit from "express-rate-limit";
-import mongoSanitize from "express-mongo-sanitize";
+// import mongoSanitize from "express-mongo-sanitize";
 import hpp from "hpp";
 
 import { env } from "./config/env.js";
 import { notFoundMiddleware } from "./middlewares/notFound.middleware.js";
 import { errorMiddleware } from "./middlewares/error.middleware.js";
+import { sanitizeRequest } from "./middlewares/sanitizeMiddleware.js";
 
 const app = express();
 
@@ -27,7 +28,7 @@ app.use(cookieParser());
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
-app.use(mongoSanitize());
+app.use(sanitizeRequest);
 app.use(hpp());
 
 if (env.nodeEnv === "development") {
@@ -51,8 +52,6 @@ app.get("/", (req, res) => {
     message: "Welcome to SkillBridge AI Backend API.",
   });
 });
-
-
 
 app.use(notFoundMiddleware);
 app.use(errorMiddleware);
