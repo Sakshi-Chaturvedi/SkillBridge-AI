@@ -19,7 +19,7 @@ app.use(
   cors({
     origin: env.frontendUrl,
     credentials: true,
-  })
+  }),
 );
 
 app.use(helmet());
