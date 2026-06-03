@@ -115,7 +115,7 @@ userSchema.methods.generateResetPasswordToken = function () {
   // ? 10 minutes expiry
   this.resetPasswordExpire = Date.now() + 10 * 60 * 1000;
 
-  // raw token return karo, ye URL/Postman me use hoga
+  // ? raw token return karo, ye URL/Postman me use hoga
   return resetToken;
 };
 

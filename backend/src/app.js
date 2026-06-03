@@ -13,6 +13,8 @@ import { notFoundMiddleware } from "./middlewares/notFound.middleware.js";
 import { errorMiddleware } from "./middlewares/error.middleware.js";
 import { sanitizeRequest } from "./middlewares/sanitizeMiddleware.js";
 
+import authRouter from "./routes/auth.route.js";
+
 const app = express();
 
 app.use(
@@ -52,6 +54,9 @@ app.get("/", (req, res) => {
     message: "Welcome to SkillBridge AI Backend API.",
   });
 });
+
+// ! Auth Routes ----------->>>>>>>>>..
+app.use("/api/v1/auth", authRouter);
 
 app.use(notFoundMiddleware);
 app.use(errorMiddleware);
