@@ -1,6 +1,7 @@
 import catchAsyncError from "../middlewares/catchAsyncError.js";
 import {
   registerUserService,
+  resendVTokenService,
   userVerificationService,
 } from "../services/auth.service.js";
 import { sendResponse } from "../utils/sendResponse.js";
@@ -34,3 +35,20 @@ export const verifyUserController = catchAsyncError(async (req, res, next) => {
     data: response,
   });
 });
+
+// ! Resend Verification Token Controller --------------->>>>>>>>>>>>>>>>>>>>.....................
+export const resendVTokenController = catchAsyncError(
+  async (req, res, next) => {
+    const { email } = req.body;
+
+    const response = await resendVTokenService(email);
+
+    return sendResponse({
+      res,
+      statusCode: 200,
+      success: true,
+      message: `Verification link resent to ${response.email} successfully.`,
+      data: response,
+    });
+  },
+);

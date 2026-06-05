@@ -121,3 +121,73 @@ export const userVerificationService = async (token) => {
     isProfileCompleted: user.isProfileCompleted,
   };
 };
+
+// ! Resend Verification Token Service ---------------->>>>>>>>>>>>>>>>>>>>........................
+export const resendVTokenService = async (email) => {
+  if (!email) {
+    throw new ErrorHandler("Email is required.", 400);
+  }
+
+  email = email.toLowerCase().trim();
+
+  const user = await userModel.findOne({ email });
+
+  if (!user) {
+    throw new ErrorHandler("User not found.", 404);
+  }
+
+  if (user.isEmailVerified) {
+    throw new ErrorHandler("User is already verified.", 400);
+  }
+
+  const rawToken = crypto.randomBytes(32).toString("hex");
+
+  const hashedToken = crypto
+    .createHash("sha256")
+    .update(rawToken)
+    .digest("hex");
+
+  user.emailVerificationToken = hashedToken;
+  user.emailVerificationExpire = Date.now() + 15 * 60 * 1000;
+
+  await user.save({ validateBeforeSave: false });
+
+  const frontendURL =
+    process.env.FRONTEND_URL && process.env.FRONTEND_URL !== "undefined"
+      ? process.env.FRONTEND_URL
+      : "http://localhost:5173";
+
+  const verificationUrl = `${frontendURL}/verify-email/${rawToken}`;
+
+  try {
+    await sendEmail({
+      to: user.email,
+      subject: "Verify your SkillBridge AI account",
+      html: `
+        <h2>Welcome to SkillBridge AI</h2>
+        <p>Please verify your email by clicking the link below:</p>
+        <a href="${verificationUrl}">Verify Email</a>
+        <p>This link will expire in 15 minutes.</p>
+      `,
+      text: `Verify your email: ${verificationUrl}`,
+    });
+
+    return {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      isEmailVerified: user.isEmailVerified,
+      isProfileCompleted: user.isProfileCompleted,
+    };
+  } catch (error) {
+    user.emailVerificationToken = undefined;
+    user.emailVerificationExpire = undefined;
+
+    await user.save({ validateBeforeSave: false });
+
+    throw new ErrorHandler(
+      "Verification email could not be sent. Please try again.",
+      500,
+    );
+  }
+};
