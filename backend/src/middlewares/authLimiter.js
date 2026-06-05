@@ -11,6 +11,17 @@ export const authLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+export const verificationLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  max: process.env.NODE_ENV === "production" ? 10 : 100,
+  message: {
+    success: false,
+    message: "Too many verification attempts. Please try again later.",
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 export const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: process.env.NODE_ENV === "production" ? 5 : 100,
