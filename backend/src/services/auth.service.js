@@ -2,7 +2,7 @@ import crypto from "crypto";
 import userModel from "../models/user.model.js";
 import { ErrorHandler } from "../middlewares/error.middleware.js";
 import { sendEmail } from "../utils/sendVerificationEmail.js";
-// import { sendToken } from "../utils/sendToken.js";
+import jwt from "jsonwebtoken";
 
 // ! User Registration Service ----------------->>>>>>>>>>>>>>>>>>>>.......................
 export const registerUserService = async (data) => {
@@ -244,4 +244,51 @@ export const loginService = async (userData) => {
   await user.save({ validateBeforeSave: false });
 
   return user;
+};
+
+// ! Refresh Access Token Service --------------------->>>>>>>>>>>>>>>>>>...........................
+export const refreshTokenService = async (token) => {
+  if (!token) {
+    throw new ErrorHandler("Refresh token is required. Please login again.", 401);
+  }
+
+  let decoded;
+
+  try {
+    decoded = jwt.verify(token, process.env.JWT_REFRESH_KEY);
+  } catch (error) {
+    throw new ErrorHandler(
+      "Invalid or expired refresh token. Please login again.",
+      401
+    );
+  }
+
+  const user = await userModel.findById(decoded.id);
+
+  if (!user) {
+    throw new ErrorHandler("Invalid refresh token. Please login again.", 401);
+  }
+
+  if (decoded.tokenVersion !== user.refreshTokenVersion) {
+    throw new ErrorHandler("Refresh token expired. Please login again.", 401);
+  }
+
+  if (user.accountStatus !== "active") {
+    throw new ErrorHandler("Your account is not active.", 403);
+  }
+
+  const accessToken = user.accessToken();
+
+  return {
+    accessToken,
+    user: {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      accountStatus: user.accountStatus,
+      isEmailVerified: user.isEmailVerified,
+      isProfileCompleted: user.isProfileCompleted,
+    },
+  };
 };

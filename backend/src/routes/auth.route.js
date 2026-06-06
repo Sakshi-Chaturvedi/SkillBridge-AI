@@ -11,6 +11,7 @@ import {
   loginController,
   logoutAllDevicesController,
   logoutController,
+  refreshAccessToken,
   registerUserController,
   resendVTokenController,
   verifyUserController,
@@ -41,5 +42,10 @@ router.get("/logout", authMiddleware, logoutController);
 
 // ! Multi - Device Logout - Route
 router.get("/logout-all", authMiddleware, logoutAllDevicesController);
+
+// ! Refresh Access Token - Route
+router.post("/refresh-token", refreshAccessToken);
+
+
 
 export default router;

@@ -1,6 +1,7 @@
 import catchAsyncError from "../middlewares/catchAsyncError.js";
 import {
   loginService,
+  refreshTokenService,
   registerUserService,
   resendVTokenService,
   userVerificationService,
@@ -112,3 +113,26 @@ export const logoutAllDevicesController = catchAsyncError(
       });
   },
 );
+
+// ! Refresh Access Token Controller --------------------->>>>>>>>>>>>>>>>>>>>>>>>>>>>..........................
+export const refreshAccessToken = catchAsyncError(async (req, res, next) => {
+  const token = req.cookies?.refreshToken;
+
+  const { accessToken, user } = await refreshTokenService(token);
+
+  const cookieOptions = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    maxAge: 15 * 60 * 1000,
+  };
+
+  return res
+    .status(200)
+    .cookie("accessToken", accessToken, cookieOptions)
+    .json({
+      success: true,
+      message: "Access token refreshed successfully.",
+      user,
+    });
+});
