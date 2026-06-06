@@ -62,10 +62,53 @@ export const loginController = catchAsyncError(async (req, res, next) => {
 
   const sanitizedData = {
     email: emailInput.toLowerCase().trim(),
-    password: passwordInput, 
+    password: passwordInput,
   };
 
   const user = await loginService(sanitizedData);
 
   return sendToken(user, 200, res);
 });
+
+// ! Logout from One Device Controller ---------------------->>>>>>>>>>>>>>>>>>>>>>>>>>>............................
+export const logoutController = catchAsyncError(async (req, res, next) => {
+  const clearCookieOptions = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+  };
+
+  return res
+    .clearCookie("accessToken", clearCookieOptions)
+    .clearCookie("refreshToken", clearCookieOptions)
+    .status(200)
+    .json({
+      success: true,
+      message: "Logged out successfully.",
+    });
+});
+
+// ! Logout from All Devices Controller ---------------------->>>>>>>>>>>>>>>>>>>>>>>>>>>>>........................
+export const logoutAllDevicesController = catchAsyncError(
+  async (req, res, next) => {
+    const user = req.user;
+
+    user.refreshTokenVersion += 1;
+    await user.save({ validateBeforeSave: false });
+
+    const clearCookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    };
+
+    return res
+      .clearCookie("accessToken", clearCookieOptions)
+      .clearCookie("refreshToken", clearCookieOptions)
+      .status(200)
+      .json({
+        success: true,
+        message: "Logged out from all devices successfully.",
+      });
+  },
+);

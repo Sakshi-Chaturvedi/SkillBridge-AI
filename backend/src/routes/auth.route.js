@@ -9,10 +9,13 @@ import validate from "../middlewares/validate.js";
 import { loginSchema, registerSchema } from "../validations/auth.validation.js";
 import {
   loginController,
+  logoutAllDevicesController,
+  logoutController,
   registerUserController,
   resendVTokenController,
   verifyUserController,
 } from "../controllers/auth.contoller.js";
+import { authMiddleware } from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 
@@ -32,5 +35,11 @@ router.post("/resend-verify-token", otpLimiter, resendVTokenController);
 
 // ! Login - Route
 router.post("/login", loginLimiter, validate(loginSchema), loginController);
+
+// ! Single Device Logout - Route
+router.get("/logout", authMiddleware, logoutController);
+
+// ! Multi - Device Logout - Route
+router.get("/logout-all", authMiddleware, logoutAllDevicesController);
 
 export default router;
