@@ -2,6 +2,7 @@ import crypto from "crypto";
 import userModel from "../models/user.model.js";
 import { ErrorHandler } from "../middlewares/error.middleware.js";
 import { sendEmail } from "../utils/sendVerificationEmail.js";
+// import { sendToken } from "../utils/sendToken.js";
 
 // ! User Registration Service ----------------->>>>>>>>>>>>>>>>>>>>.......................
 export const registerUserService = async (data) => {
@@ -190,4 +191,57 @@ export const resendVTokenService = async (email) => {
       500,
     );
   }
+};
+
+// ! Login Service ---------------------->>>>>>>>>>>>>>>>>>>>...........................
+export const loginService = async (userData) => {
+  const email = userData?.email?.trim().toLowerCase();
+  const password = userData?.password;
+
+  if (!email || !password) {
+    throw new ErrorHandler("Email and password are required.", 400);
+  }
+
+  const user = await userModel.findOne({ email }).select("+password");
+
+  if (!user) {
+    throw new ErrorHandler("Invalid Email or Password.", 400);
+  }
+
+  if (user.accountStatus !== "active") {
+    throw new ErrorHandler("Your account is not active.", 403);
+  }
+
+  if (user.lockUntil && user.lockUntil > Date.now()) {
+    throw new ErrorHandler("Account temporarily locked. Try later.", 403);
+  }
+
+  if (!user.isEmailVerified) {
+    throw new ErrorHandler(
+      "Please verify your account before logging in.",
+      400,
+    );
+  }
+
+  const isPasswordMatched = await user.comparePass(password);
+
+  if (!isPasswordMatched) {
+    user.failedLoginAttempts += 1;
+
+    if (user.failedLoginAttempts >= 5) {
+      user.lockUntil = Date.now() + 30 * 60 * 1000;
+    }
+
+    await user.save({ validateBeforeSave: false });
+
+    throw new ErrorHandler("Invalid Email or Password.", 400);
+  }
+
+  user.failedLoginAttempts = 0;
+  user.lockUntil = undefined;
+  user.lastLoginAt = Date.now();
+
+  await user.save({ validateBeforeSave: false });
+
+  return user;
 };

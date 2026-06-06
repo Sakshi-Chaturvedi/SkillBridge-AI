@@ -15,6 +15,7 @@ const userSchema = new mongoose.Schema(
       minlength: [2, "UserName must have atleast 2 characters."],
       maxlength: [50, "UserName can't exceed 50 character limit. "],
     },
+
     email: {
       type: String,
       required: [true, "Email is required."],
@@ -23,22 +24,26 @@ const userSchema = new mongoose.Schema(
       match: [/^\S+@\S+\.\S+$/, "Please enter a valid email address."],
       lowercase: true,
     },
+
     password: {
       type: String,
       required: [true, "Password is required."],
       minlength: [8, "Password must be at least 8 characters long."],
       select: false,
     },
+
     role: {
       type: String,
       enum: Object.values(USER_ROLES),
       default: USER_ROLES.USER,
     },
+
     accountStatus: {
       type: String,
       enum: Object.values(ACCOUNT_STATUS),
       default: ACCOUNT_STATUS.ACTIVE,
     },
+
     avatar: {
       public_id: {
         type: String,
@@ -49,39 +54,66 @@ const userSchema = new mongoose.Schema(
         default: null,
       },
     },
+
     isEmailVerified: {
       type: Boolean,
       default: false,
     },
+
     emailVerificationToken: {
       type: String,
       select: false,
     },
+
     emailVerificationExpire: {
       type: Date,
       default: null,
+      select: false,
     },
+
     resetPasswordToken: {
       type: String,
       select: false,
     },
+
     resetPasswordExpire: {
       type: Date,
       default: null,
     },
+
     authProvider: {
       type: String,
       enum: Object.values(AUTH_PROVIDER),
       default: AUTH_PROVIDER.LOCAL,
     },
+
     isProfileCompleted: {
       type: Boolean,
       default: false,
     },
+
+    refreshTokenVersion: {
+      type: Number,
+      default: 0,
+    },
+
+    failedLoginAttempts: {
+      type: Number,
+      default: 0,
+      select: false,
+    },
+
+    lockUntil: {
+      type: Date,
+      default: null,
+      select: false,
+    },
+
     lastLoginAt: {
       type: Date,
       default: null,
     },
+
     passwordChangedAt: {
       type: Date,
       default: null,
@@ -127,10 +159,17 @@ userSchema.methods.accessToken = function () {
 };
 
 // ! Generate Refresh Token
-userSchema.methods.refreshToken = function () {
-  return jwt.sign({ id: this._id }, process.env.JWT_REFRESH_KEY, {
-    expiresIn: "7d",
-  });
+userSchema.methods.generateRefreshToken = function () {
+  return jwt.sign(
+    {
+      id: this._id,
+      tokenVersion: this.refreshTokenVersion,
+    },
+    process.env.JWT_REFRESH_KEY,
+    {
+      expiresIn: "7d",
+    },
+  );
 };
 
 export default mongoose.model("User", userSchema);

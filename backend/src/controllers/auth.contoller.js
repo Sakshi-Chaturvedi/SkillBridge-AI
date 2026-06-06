@@ -1,10 +1,12 @@
 import catchAsyncError from "../middlewares/catchAsyncError.js";
 import {
+  loginService,
   registerUserService,
   resendVTokenService,
   userVerificationService,
 } from "../services/auth.service.js";
 import { sendResponse } from "../utils/sendResponse.js";
+import { sendToken } from "../utils/sendToken.js";
 
 // ! User Registration Controller  ----------------->>>>>>>>>>>>>>>>>..........................
 export const registerUserController = catchAsyncError(
@@ -52,3 +54,18 @@ export const resendVTokenController = catchAsyncError(
     });
   },
 );
+
+// ! Login Contoller ------------------------>>>>>>>>>>>>>>>>>>>>>>>>>>>..............................
+export const loginController = catchAsyncError(async (req, res, next) => {
+  const emailInput = req.body?.email || "";
+  const passwordInput = req.body?.password || "";
+
+  const sanitizedData = {
+    email: emailInput.toLowerCase().trim(),
+    password: passwordInput, 
+  };
+
+  const user = await loginService(sanitizedData);
+
+  return sendToken(user, 200, res);
+});
